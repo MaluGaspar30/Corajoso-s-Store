@@ -30,15 +30,16 @@ if ($resultado && $resultado->num_rows > 0) {
         $_SESSION['usuario_nome']   = $usuario['nome'];
         $_SESSION['usuario_login']  = $usuario['login'];
 
-        $_SESSION['dados_usuario'] = [
-            'nome'     => $usuario['nome'],
-            'cpf'      => $usuario['cpf'],
-            'endereco' => $usuario['endereco'],
-            'bairro'   => $usuario['bairro'],
-            'cidade'   => $usuario['cidade'],
-            'estado'   => $usuario['estado'],
-            'cep'      => $usuario['cep']
-        ];
+       $_SESSION['dados_usuario'] = [
+    'nome'     => $usuario['nome'],
+    'email'    => $usuario['email'] ?? '',
+    'cpf'      => $usuario['cpf'],
+    'endereco' => $usuario['endereco'],
+    'bairro'   => $usuario['bairro'],
+    'cidade'   => $usuario['cidade'],
+    'estado'   => $usuario['estado'],
+    'cep'      => $usuario['cep']
+];
 
         if ($produto_id > 0) {
             if (!isset($_SESSION['carrinho'])) {

@@ -1,69 +1,49 @@
 <?php
 session_start();
 
-$produtos = [
-    1 => [
-        'nome' => 'Aproveite - Imagem de São Miguel Arcanjo.',
-        'preco' => 200.00,
-        'descricao' => 'Imagem em resina. Em promoção para quaresma de São Miguel.',
-        'imagem' => 'img/img1.jpeg'
-    ],
-    2 => [
-        'nome' => 'Bíblia Sagrada - Tradução oficial da CNBB',
-        'preco' => 82.50,
-        'descricao' => 'Bíblia Sagrada - Edição Santuário do Pai das Misericórdias.',
-        'imagem' => 'img/img2.jpeg'
-    ],
-    3 => [
-        'nome' => 'Terço de Nossa Senhora das Graças',
-        'preco' => 30.00,
-        'descricao' => 'Terço com contas em azul e detalhes em dourado.',
-        'imagem' => 'img/img3.jpeg'
-    ],
-    4 => [
-        'nome' => 'Cruz de Madeira - Clássica',
-        'preco' => 21.90,
-        'descricao' => 'Cruz de madeira de mesa. Tamanho: 12 cm.',
-        'imagem' => 'img/img4.jpeg'
-    ],
-    5 => [
-        'nome' => 'Bíblia Sagrada - Editora Ave Maria. ',
-        'preco' => 94.90,
-        'descricao' => 'Bíblia Sagrada para leitura e momentos de oração.',
-        'imagem' => 'img/img5.jpeg'
-    ],
-    6 => [
-        'nome' => ' Bíblia Sagrada - Editora Ave Maria. ',
-        'preco' => 129.90,
-        'descricao' => 'Edição especial de capa dura para mulheres.',
-        'imagem' => 'img/img6.jpeg'
-    ]
-];
+require_once "app/produtos.php";
 
 if (!isset($_SESSION['carrinho'])) {
     $_SESSION['carrinho'] = [];
 }
 
-extract($_POST);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = isset($_POST['produto_id']) ? (int) $_POST['produto_id'] : 0;
 
-if (isset($adicionar) && isset($produto_id)) {
-    $id = (int)$produto_id;
-    if (isset($produtos[$id])) {
-        if (isset($_SESSION['carrinho'][$id])) {
-            $_SESSION['carrinho'][$id]++;
-        } else {
-            $_SESSION['carrinho'][$id] = 1;
+    if ((isset($_POST['acao_compra']) || isset($_POST['adicionar'])) && isset($produtos[$id])) {
+        if (!isset($_SESSION['carrinho'][$id])) {
+            $_SESSION['carrinho'][$id] = 0;
         }
+        $_SESSION['carrinho'][$id]++;
+        header('Location: carrinho.php');
+        exit;
     }
-    header('Location: carrinho.php');
-    exit;
+
+    if (isset($_POST['aumentar']) && isset($_SESSION['carrinho'][$id])) {
+        $_SESSION['carrinho'][$id]++;
+        header('Location: carrinho.php');
+        exit;
+    }
+
+    if (isset($_POST['diminuir']) && isset($_SESSION['carrinho'][$id])) {
+        $_SESSION['carrinho'][$id]--;
+        if ($_SESSION['carrinho'][$id] <= 0) {
+            unset($_SESSION['carrinho'][$id]);
+        }
+        header('Location: carrinho.php');
+        exit;
+    }
+
+    if (isset($_POST['remover']) && isset($_SESSION['carrinho'][$id])) {
+        unset($_SESSION['carrinho'][$id]);
+        header('Location: carrinho.php');
+        exit;
+    }
 }
 
-if (isset($remover) && isset($produto_id)) {
-    $id = (int)$produto_id;
-    unset($_SESSION['carrinho'][$id]);
-    header('Location: carrinho.php');
-    exit;
+$qtd_carrinho = 0;
+foreach ($_SESSION['carrinho'] as $qtd_item) {
+    $qtd_carrinho += (int) $qtd_item;
 }
 ?>
 <!DOCTYPE html>
@@ -81,9 +61,28 @@ if (isset($remover) && isset($produto_id)) {
             <span>Corajoso’s Store</span>
         </a>
         <nav>
-            <a href="index.php">Produtos</a>
-            <a href="carrinho.php"><img src="img/carrinho.png" alt="Carrinho"> Carrinho</a>
-            <a href="login.php">Login</a>
+            <div class="dropdown-categorias" id="dropdownCategorias">
+    <button type="button" class="btn-dropdown-categorias" id="btnCategorias">
+        Categorias 
+    </button>
+    <div class="menu-categorias">
+        <a href="index.php#natal">Coleção de Natal</a>
+        <a href="index.php#tercos">Terços</a>
+        <a href="index.php#biblias">Bíblias</a>
+        <a href="index.php#imagens">Imagens</a>
+    </div>
+</div>
+            <a href="carrinho.php" class="link-carrinho" aria-label="Carrinho">
+    <span class="icone-carrinho-wrap">
+        <img src="img/carrinho.png" alt="Carrinho">
+        <span class="badge-carrinho"><?= $qtd_carrinho ?></span>
+    </span>
+</a>
+            <?php if (isset($_SESSION['usuario_logado'])): ?>
+                <span class="usuario-nav"> <?= $_SESSION['usuario_nome'] ?? 'Usuário' ?></span>
+            <?php else: ?>
+                <a href="login.php">Login</a>
+            <?php endif; ?>
         </nav>
     </div>
 </header>
@@ -111,7 +110,23 @@ if (isset($remover) && isset($produto_id)) {
                     <img src="<?= $produtos[$id]['imagem'] ?>" alt="<?= $produtos[$id]['nome'] ?>" style="max-width: 80px; height: auto;">
                     <div>
                         <h3><?= $produtos[$id]['nome'] ?></h3>
-                        <p>Quantidade: <?= $quantidade ?></p>
+                        <p>Valor unitário: R$ <?= number_format($produtos[$id]['preco'], 2, ',', '.') ?></p>
+
+                        <div style="display: flex; align-items: center; gap: 10px; margin: 8px 0;">
+                            <span>Quantidade:</span>
+                            <form action="carrinho.php" method="POST" style="display: inline;">
+                                <input type="hidden" name="produto_id" value="<?= $id ?>">
+                                <button type="submit" name="diminuir" value="1" style="padding: 2px 10px; cursor: pointer;">-</button>
+                            </form>
+
+                            <strong><?= $quantidade ?></strong>
+
+                            <form action="carrinho.php" method="POST" style="display: inline;">
+                                <input type="hidden" name="produto_id" value="<?= $id ?>">
+                                <button type="submit" name="aumentar" value="1" style="padding: 2px 10px; cursor: pointer;">+</button>
+                            </form>
+                        </div>
+
                         <p>Subtotal: R$ <?= number_format($subtotal, 2, ',', '.') ?></p>
                         
                         <form action="carrinho.php" method="POST" style="margin-top: 5px;">
@@ -133,6 +148,8 @@ if (isset($remover) && isset($produto_id)) {
                     <button type="submit" class="btn">Fazer Login para Finalizar</button>
                 </form>
             <?php endif; ?>
+
+            <a href="index.php#produtos" class="btn link-btn" style="margin-top: 10px; background-color: #555;">Continuar Comprando</a>
 
         <?php endif; ?>
     </div>

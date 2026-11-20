@@ -23,8 +23,23 @@ $produto_id = $produto_id ?? $_SESSION['produto_id_temp'] ?? null;
             <span>Corajoso’s Store</span>
         </a>
         <nav>
-            <a href="index.php#produtos">Produtos</a>
-            <a href="carrinho.php"><img src="img/carrinho.png" alt="Carrinho"> Carrinho</a>
+            <div class="dropdown-categorias" id="dropdownCategorias">
+    <button type="button" class="btn-dropdown-categorias" id="btnCategorias">
+        Categorias 
+    </button>
+    <div class="menu-categorias">
+        <a href="index.php#natal">Coleção de Natal</a>
+        <a href="index.php#tercos">Terços</a>
+        <a href="index.php#biblias">Bíblias</a>
+        <a href="index.php#imagens">Imagens</a>
+    </div>
+</div>
+            <a href="carrinho.php" class="link-carrinho" aria-label="Carrinho">
+    <span class="icone-carrinho-wrap">
+        <img src="img/carrinho.png" alt="Carrinho">
+        <span class="badge-carrinho"><?= $qtd_carrinho ?></span>
+    </span>
+</a>
             <a href="login.php">Login</a>
         </nav>
     </div>
